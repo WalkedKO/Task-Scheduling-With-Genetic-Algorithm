@@ -1,4 +1,7 @@
 from random import randint
+from productTag import ProductTag
+# TODO
+# repair fitness so it calculates workers in parallel
 """
 A single individual in "the specie". One schedule of a day that describes what will each
 worker do.
@@ -9,12 +12,12 @@ workers_set: list(worker)
 products_set: list(product)
     list of all possible products
 hours: int
-    number of working hours
+    number of time units
 workers_nr: int
     number of workers
 schedule: list(list(product))
-    each row represents a worker and each element one working our. If it's none, the worker does nothing.
-    Else there should be a product which worker is producing at the hour. 
+    each row represents a worker and each element one time unit. If it's none, the worker does nothing.
+    Else there should be a product which worker is producing at the time unit. 
 """
 class Schedule:
     def __init__(self, workers_set, products_set, hours):
@@ -32,6 +35,24 @@ class Schedule:
         self.hours = hours
         self.workers_nr = len(workers_set)
         self.schedule = [[None] * hours] * self.workers_nr
+        self.schedule_tags =  [[ProductTag.NORMAL] * hours] * self.workers_nr
+
+
+    def place_in_schedule(self, prod_id, start, worker, worker_id):
+        worker_schedule = self.schedule[worker_id]
+        product = worker.can_produce[prod_id]
+        free = True
+        hours_needed = product.time
+        for j in range(start, start + hours_needed):
+            if worker_schedule[j] is not None:
+                free = False
+                break
+        if free:
+            for j in range(start, start + hours_needed):
+                worker_schedule[j] = worker.can_produce[prod_id]
+            self.schedule_tags[worker_id][start] = ProductTag.START
+            self.schedule_tags[worker_id][start + hours_needed - 1] = ProductTag.STOP
+
     def randomize(self):
         """
         Creates a completely random schedule, and saves it into the self.schedule. Used for
@@ -48,14 +69,7 @@ class Schedule:
                     hours_needed = worker.can_produce[job].time
                     if start + hours_needed < self.hours:
                         break
-                free = True
-                for j in range(start, start + hours_needed):
-                    if self.schedule[i][j] is not None:
-                        free = False
-                        break
-                if free:
-                    for j in range(start, start + hours_needed):
-                        self.schedule[i][j] = worker.can_produce[job]
+                self.place_in_schedule(job, start, worker, i)
                 attempts += 1
 
     def evaluate_fitness(self):
@@ -66,26 +80,39 @@ class Schedule:
         """
         # some products require components
         ready_products = []
+        to_remove_products = []
         score = 0.0
-        new_schedule = self.schedule.copy()
-        # removing the duplicates. Products in schedule represents what the worker does in the specific hour.
-        # we want to calculate only which product they produce, not how long
-        for worker in new_schedule:
-            for i in range(len(worker) - 1):
-                if worker[i] is not None and worker[i + 1] is not None and worker[i].name == worker[i + 1].name:
-                    worker[i] = None
-            for hour in worker:
-                if hour is not None:
+        timers = [0 for i in self.schedule]
+        for hour in range(self.hours):
+            for i, worker in enumerate(self.schedule):
+                product_current = worker[timers[i]]
+                tag_current = self.schedule_tags[i][timers[i]]
+                print(tag_current, " ", product_current)
+                if product_current is None:
+                    timers[i] += 1
+                elif tag_current == ProductTag.NORMAL:
+                    timers[i] += 1
+                elif tag_current == ProductTag.STOP:
+                    ready_products.append(worker[timers[i]])
+                    print(ready_products)
+                    timers[i] += 1
+                elif tag_current == ProductTag.START:
                     done = True
-                    for component in hour.needed:
-                        if component in ready_products:
-                            ready_products.remove(component)
+                    for needed in product_current.needed:
+                        if needed in ready_products:
+                            ready_products.remove(needed)
+                            to_remove_products.append(needed)
                         else:
                             done = False
+                            for prod in to_remove_products:
+                                ready_products.append(prod)
+                            break
                     if done:
-                        ready_products.append(hour)
-        for product in ready_products:
-            score += product.value
+                        ready_products.append(product_current)
+                        timers[i] += 1
+                    to_remove_products.clear()
+        for prod in ready_products:
+            score += prod.value
         return score
     def print(self):
         """
