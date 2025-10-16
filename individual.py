@@ -1,7 +1,5 @@
 from random import randint
 from productTag import ProductTag
-# TODO
-# repair fitness so it calculates workers in parallel
 """
 A single individual in "the specie". One schedule of a day that describes what will each
 worker do.
@@ -34,8 +32,8 @@ class Schedule:
         self.products_set = products_set.copy()
         self.hours = hours
         self.workers_nr = len(workers_set)
-        self.schedule = [[None] * hours] * self.workers_nr
-        self.schedule_tags =  [[ProductTag.NORMAL] * hours] * self.workers_nr
+        self.schedule = [[None for i in range(hours)] for j in range(self.workers_nr)]
+        self.schedule_tags =  [[ProductTag.NORMAL for i in range(hours)] for i in range(self.workers_nr)]
 
 
     def place_in_schedule(self, prod_id, start, worker, worker_id):
@@ -71,7 +69,6 @@ class Schedule:
                         break
                 self.place_in_schedule(job, start, worker, i)
                 attempts += 1
-
     def evaluate_fitness(self):
         """
         Evaluates the schedule fitness score.
@@ -87,14 +84,12 @@ class Schedule:
             for i, worker in enumerate(self.schedule):
                 product_current = worker[timers[i]]
                 tag_current = self.schedule_tags[i][timers[i]]
-                print(tag_current, " ", product_current)
                 if product_current is None:
                     timers[i] += 1
                 elif tag_current == ProductTag.NORMAL:
                     timers[i] += 1
                 elif tag_current == ProductTag.STOP:
                     ready_products.append(worker[timers[i]])
-                    print(ready_products)
                     timers[i] += 1
                 elif tag_current == ProductTag.START:
                     done = True
@@ -108,7 +103,6 @@ class Schedule:
                                 ready_products.append(prod)
                             break
                     if done:
-                        ready_products.append(product_current)
                         timers[i] += 1
                     to_remove_products.clear()
         for prod in ready_products:
@@ -124,4 +118,4 @@ class Schedule:
                 if hour is not None:
                     line += hour.name
             print(line)
-            print(self.evaluate_fitness())
+        print(self.evaluate_fitness())
