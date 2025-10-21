@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, sample
 from productTag import ProductTag
 """
 A single individual in "the specie". One schedule of a day that describes what will each
@@ -35,8 +35,15 @@ class Schedule:
         self.schedule = [[None for i in range(hours)] for j in range(self.workers_nr)]
         self.schedule_tags =  [[ProductTag.NORMAL for i in range(hours)] for i in range(self.workers_nr)]
 
-
     def place_in_schedule(self, prod_id, start, worker, worker_id):
+        """
+        Places product of id prod_id, to start hour, at worker, at worker_id
+        :param prod_id: id of product to be placed
+        :param start: start hour
+        :param worker: worker which will receive the product to its schedule
+        :param worker_id: id of worker from previous parameter
+        :return:
+        """
         worker_schedule = self.schedule[worker_id]
         product = worker.can_produce[prod_id]
         free = True
@@ -51,16 +58,18 @@ class Schedule:
             self.schedule_tags[worker_id][start] = ProductTag.START
             self.schedule_tags[worker_id][start + hours_needed - 1] = ProductTag.STOP
 
-    def randomize(self):
+
+    def randomize(self, stop):
         """
-        Creates a completely random schedule, and saves it into the self.schedule. Used for
-        generating the first generation.
-        """
+                    Creates a completely random schedule, and saves it into the self.schedule. Used for
+                    generating the first generation.
+                    :param stop: (int) numbers of attempts to stop randomizing
+            """
         for i, worker in enumerate(self.workers_set):
             attempts = 0
             # trying to put random products in a worker shchedule. In case when there's no room for
             # any product, the randomizer will stop after 10 attemps.
-            while attempts <= 10:
+            while attempts <= stop:
                 job = randint(0, len(worker.can_produce) - 1)
                 while True:
                     start = randint(0, self.hours - 1)
@@ -69,6 +78,23 @@ class Schedule:
                         break
                 self.place_in_schedule(job, start, worker, i)
                 attempts += 1
+
+    def crossover(self, father, mother):
+        """
+            TEMPORARY. Creates the schedule from combining schedules of two parents.
+            I have to choose a better method...
+            :param father: (Schedule) one parent
+            :param mother: (Schedule) second parent
+
+        """
+        from_father = sample(range(self.workers_nr), int(self.workers_nr / 2))
+        for i in range(self.workers_nr):
+            if i in from_father:
+                self.schedule[i] = father.schedule[i].copy()
+                self.schedule_tags[i] = father.schedule_tags[i].copy()
+            else:
+                self.schedule[i] = mother.schedule[i].copy()
+                self.schedule_tags[i] = mother.schedule_tags[i].copy()
     def evaluate_fitness(self):
         """
         Evaluates the schedule fitness score.
@@ -78,7 +104,7 @@ class Schedule:
         # some products require components
         ready_products = []
         to_remove_products = []
-        score = 0.0
+        score = 1.0
         timers = [0 for i in self.schedule]
         for hour in range(self.hours):
             for i, worker in enumerate(self.schedule):

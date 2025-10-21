@@ -14,12 +14,9 @@ class Product:
         time units needed to produce the product
     :param value: int
         value of the finished product
-    :param tag: ProductTag
-        used for telling if the unit in schedule is start of producing or end
     """
     id: int
     name: str
     needed: list
     time: int
     value: int = 0
-    tag: ProductTag = ProductTag.NORMAL
