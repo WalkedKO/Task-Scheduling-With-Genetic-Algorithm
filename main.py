@@ -2,7 +2,7 @@ from setuptools.dist import check_specifier
 
 from worker import Worker
 from product import Product
-from individual import Schedule
+from schedule import Schedule
 from specie import Specie
 
 # Usage example. Fast food restaurant.

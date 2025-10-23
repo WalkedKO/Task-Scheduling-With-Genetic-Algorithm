@@ -1,4 +1,4 @@
-from individual import Schedule
+from schedule import Schedule
 from numpy.random import choice, randint
 """
 The whole process of genetic algorithm.
