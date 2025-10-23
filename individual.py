@@ -78,23 +78,48 @@ class Schedule:
                         break
                 self.place_in_schedule(job, start, worker, i)
                 attempts += 1
+    def crossover_inside(self, father_schedule, mother_schedule, father_tags, mother_tags):
+        """
+        Creates a schedule for a single worker from two other schedules.
+        Selects a random part of father's schedule which starts with start tag and ends with stop tag
+        and injects it into random position on mother's schedule.
+        :param father_schedule: schedule of one parent's (called father) worker
+        :param mother_schedule: schedule of another parent's (called mother) worker, but must be the same worker type as in first
+        :param father_tags: list of tags in father's schedule
+        :param mother_tags: list of tags in mother's schedule
 
+        :return: tuple, combined schedule for the worker and combined tag schedule
+        """
+
+        starts = [i for i, tag in enumerate(father_tags) if tag == ProductTag.START]
+        start = sample(starts, 1)[0]
+        stops = [i for i in range(start, len(father_tags)) if father_tags[i] == ProductTag.STOP]
+        stop = sample(stops, 1)[0] + 1
+        block_len = stop - start
+        to_replace = father_schedule[start:stop]
+        to_replace_tag = father_tags[start:stop]
+
+        mother_start = randint(0, (len(mother_schedule) - block_len))
+        mother_stop = mother_start + block_len
+        result = mother_schedule[:mother_start] + to_replace + mother_schedule[mother_stop:]
+        tag_result = mother_tags[:mother_start] + to_replace_tag + mother_tags[mother_stop:]
+        return result, tag_result
     def crossover(self, father, mother):
         """
-            TEMPORARY. Creates the schedule from combining schedules of two parents.
-            I have to choose a better method...
+            Creates the schedule from combining schedules of two parents.
+            Chooses some of the workers to copy father schedule and some to crossover mother and father schedule.
             :param father: (Schedule) one parent
             :param mother: (Schedule) second parent
 
         """
         from_father = sample(range(self.workers_nr), int(self.workers_nr / 2))
         for i in range(self.workers_nr):
+            father_schedule = father.schedule[i].copy()
+            father_tags = father.schedule_tags[i].copy()
             if i in from_father:
-                self.schedule[i] = father.schedule[i].copy()
-                self.schedule_tags[i] = father.schedule_tags[i].copy()
+                self.schedule[i], self.schedule_tags[i] = father_schedule, father_tags
             else:
-                self.schedule[i] = mother.schedule[i].copy()
-                self.schedule_tags[i] = mother.schedule_tags[i].copy()
+                self.schedule[i], self.schedule_tags[i] = self.crossover_inside(father_schedule, mother.schedule[i].copy(), father_tags, mother.schedule_tags[i].copy())
     def evaluate_fitness(self):
         """
         Evaluates the schedule fitness score.
@@ -143,5 +168,8 @@ class Schedule:
             for hour in worker:
                 if hour is not None:
                     line += hour.name
+                    line += "|"
+                else:
+                    line += "   |"
             print(line)
         print(self.evaluate_fitness())
