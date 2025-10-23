@@ -16,8 +16,8 @@ The genetic algorithms:
 It is classic implementation of genetic algorithm which can be summarized in this way:
 - We have a problem, so we create P amount of random solutions (called individuals). We call it population.
 - For each solution we calculate the fitness score, it tells us how good is this solution
-- We randomly choose X individuals, those with higher fitness score are more probable to be chosen.
-- Then from that X individuals, we create new P individuals which will replace current population. We call it next generation. We create them by applying crossover function over the X individuals.
+- We randomly choose N individuals, those with higher fitness score are more probable to be chosen.
+- Then from that N individuals, we create new P individuals which will replace current population. We call it next generation. We create them by applying crossover function over the N individuals.
 - We repeat the process for the fixed amount of generations.
 
 My implementation:
