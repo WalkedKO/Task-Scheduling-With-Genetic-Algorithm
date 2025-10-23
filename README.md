@@ -27,9 +27,9 @@ workers schedules to copy, and the other half to mix with the second parent sche
 same worker.
 
 Files:
-specie.py - contains the Specie class
-schedule.py - contains the Schedule class
-worker.py - worker's data class
-product.py - product's data class
-productTag.py - enum for product tags
-main.py - testing, example of implementation
+- specie.py - contains the Specie class
+- schedule.py - contains the Schedule class
+- worker.py - worker's data class
+- product.py - product's data class
+- productTag.py - enum for product tags
+- main.py - testing, example of implementation
